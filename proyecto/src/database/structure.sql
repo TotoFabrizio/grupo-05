@@ -1,6 +1,3 @@
-DROP DATABASE IF EXISTS hard4gamers;
-CREATE DATABASE hard4gamers;
-USE hard4gamers;
 CREATE TABLE users(
   id INT(10) AUTO_INCREMENT NOT NULL,
   user_name VARCHAR(50) NOT NULL,
