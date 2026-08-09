@@ -5,9 +5,28 @@ const path = require("path");
 const env = process.env.NODE_ENV || "development";
 const config = require(path.join(__dirname, "config", "config.js"))[env];
 
+async function waitForDatabase(options, retries = 180, delayMs = 2000) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const connection = await mysql.createConnection({
+                ...options,
+                connectTimeout: 10000,
+            });
+            await connection.close();
+            console.log(`MySQL listo después de ${attempt} intento(s).`);
+            return;
+        } catch (err) {
+            if (attempt === retries) throw err;
+            console.log(`Esperando MySQL (${attempt}/${retries})...`);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+}
+
 async function initDatabase() {
     const username = config.username || process.env.DB_USER || "root";
-    const password = config.password || process.env.DB_PASS || "";
+    const password =
+        config.password || process.env.DB_PASS || process.env.DB_PASSWORD || "";
     const host = config.host || process.env.DB_HOST || "127.0.0.1";
     const port = config.port || process.env.DB_PORT || 3306;
     const targetDb = process.env.DB_NAME || config.database || "hard4gamers";
@@ -30,6 +49,13 @@ async function initDatabase() {
 
     let connection;
     try {
+        await waitForDatabase({
+            host,
+            user: username,
+            password,
+            port,
+        });
+
         connection = await mysql.createConnection({
             host,
             user: username,
